@@ -35,9 +35,29 @@ async function run() {
       res.send(options);
     });
 
+    app.get('/bookings', async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const bookings = await bookingCollection.find(query).toArray();
+      res.send(bookings)
+    })
+
+
+
     app.post('/bookings', async (req, res) => {
       const booking = req.body
-      console.log(booking)
+      console.log(booking);
+      const query = {
+        appointmentDate: booking.appointmentDate,
+        treatmentName: booking.treatmentName,
+        // email: booking.email
+      };
+      const alreadyBooked = await bookingCollection.find(query).toArray();
+      if (alreadyBooked.length) {
+        const message = `You already have an book on ${booking.appointmentDate}`
+        res.send({ acknowledged: false, message })
+      }
+
       const result = await bookingCollection.insertOne(booking);
       res.send(result);
     })
