@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 //middle wares
@@ -18,6 +18,7 @@ async function run() {
   try {
     const servicesCollection = client.db('doctorsPortal').collection('services');
     const bookingCollection = client.db('doctorsPortal').collection('bookings');
+    const usersCollection = client.db('doctorsPortal').collection('users');
     app.get('/services', async (req, res) => {
       const date = req.query.date;
       console.log(date);
@@ -40,9 +41,19 @@ async function run() {
       const query = { email: email };
       const bookings = await bookingCollection.find(query).toArray();
       res.send(bookings)
-    })
+    });
 
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      const result = await usersCollection.insertOne(user)
+      res.send(result);
+    });
 
+    app.get('/users', async (req, res) => {
+      const query = {};
+      const users = await usersCollection.find(query).toArray();
+      res.send(users);
+    });
 
     app.post('/bookings', async (req, res) => {
       const booking = req.body
@@ -60,6 +71,19 @@ async function run() {
 
       const result = await bookingCollection.insertOne(booking);
       res.send(result);
+    });
+
+    app.put('/users/admin/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true }
+      const updateDoc = {
+        $set: {
+          role: 'admin'
+        }
+      }
+      const result = await usersCollection.updateOne(filter, updateDoc, options)
+      res.send(result)
     })
 
   }
